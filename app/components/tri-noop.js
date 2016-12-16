@@ -1,0 +1,1 @@
+export { default } from 'ember-tri-state/components/tri-noop';

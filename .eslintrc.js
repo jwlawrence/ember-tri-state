@@ -30,19 +30,21 @@ module.exports = {
     jsx: false,
   },
   rules: {
-    'arrow-body-style': 0,
-    'comma-dangle': 0,
-    'prefer-const': 1,
-    'func-names': 0,
-    'prefer-arrow-callback': 0,
+    'arrow-body-style': 'off',
+    'comma-dangle': 'warn',
+    'prefer-const': 'warn',
+    'func-names': 'off',
+    'prefer-arrow-callback': 'off',
     'no-restricted-syntax': ['error', 'ForOfStatement', 'WithStatement'],
-    'curly': 2,
-    'no-implicit-coercion': [2, {
+    'curly': 'error',
+    'no-implicit-coercion': ['error', {
       'number': true,
       'string': true,
     }],
-    'import/no-unresolved': 0,
-    'no-underscore-dangle': 0,
-    'prefer-rest-params': 0,
+    'import/extensions': 'off',
+    'import/no-unresolved': 'off',
+    'import/no-extraneous-dependencies': 'off',
+    'no-underscore-dangle': 'off',
+    'prefer-rest-params': 'off',
   }
 };
