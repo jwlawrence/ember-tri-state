@@ -2,5 +2,6 @@
 'use strict';
 
 module.exports = {
-  name: 'ember-tri-state'
+  name: 'ember-tri-state',
+  isDevelopingAddon: () => true,
 };
