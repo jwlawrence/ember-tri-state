@@ -1,5 +1,5 @@
 import Ember from 'ember';
-import layout from '../templates/components/tri-noop';
+import layout from 'ember-tri-state/templates/components/tri-noop';
 
 export default Ember.Component.extend({
   layout,

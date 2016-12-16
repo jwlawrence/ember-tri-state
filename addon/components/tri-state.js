@@ -1,6 +1,6 @@
 import Ember from 'ember';
+import layout from 'ember-tri-state/templates/components/tri-state';
 import { task } from 'ember-concurrency';
-import layout from '../templates/components/tri-state';
 
 const { Component, computed, isBlank, typeOf, RSVP, merge, Logger } = Ember;
 
@@ -15,39 +15,40 @@ export default Component.extend({
   resolveAll: computed.not('failFast'),
 
   /**
-   * Name of the noop component to be used when no component name is provided
+   * Name of the component responsible for rendering each state when inactive
    * @type {String}
    */
-  noopComponent: 'data-noop',
+  noopComponent: 'tri-noop',
 
   /**
-   * An object containing the names of the components for each state
-   * to be yielded back to the template.
+   * Name of the component responsible for rendering each state when active
+   * @type {String}
+   */
+  yieldComponent: 'tri-yield',
+
+  /**
+   * This determines, based on the state and/or outcome of the request, whether a component should
+   * be rendered or not. When a state is false the `noopComponent` will be rendered, when it is true
+   * the `yieldComponent` is rendered.
    * @type {Object}
    */
   components: computed('taskInstance.isRunning', function () {
     const taskInstance = this.get('taskInstance');
     const noopComponent = this.get('noopComponent');
-    let errorComponent = noopComponent;
-    let successComponent = noopComponent;
-    let loadingComponent = noopComponent;
+    const yieldComponent = this.get('yieldComponent');
 
-    if (taskInstance.get('error')) {
-      errorComponent = this.get('errorComponent');
-    }
-
-    if (taskInstance.get('value')) {
-      successComponent = this.get('successComponent');
-    }
-
-    if (taskInstance.get('isRunning')) {
-      loadingComponent = this.get('loadingComponent');
+    if (!taskInstance) {
+      return {
+        error: noopComponent,
+        success: noopComponent,
+        loading: noopComponent,
+      };
     }
 
     return {
-      error: errorComponent,
-      success: successComponent,
-      loading: loadingComponent,
+      error: taskInstance.get('error') ? yieldComponent : noopComponent,
+      success: taskInstance.get('value') ? yieldComponent : noopComponent,
+      loading: taskInstance.get('isRunning') ? yieldComponent : noopComponent,
     };
   }),
 
@@ -57,22 +58,27 @@ export default Component.extend({
    */
   data: computed('taskInstance.isRunning', function () {
     const taskInstance = this.get('taskInstance');
+
+    if (!taskInstance) {
+      return null;
+    }
+
     return taskInstance.get('error') || taskInstance.get('value');
   }),
 
   /**
-   * Task that makes the request(s) provided by the 'dataActions' attribute. We wrap the
+   * Task that makes the request(s) provided by the `dataActions` attribute. We wrap the
    * request in a concurrency task so we have more control over the state of the request(s).
    * @type {Task}
    */
-  _fetchDataTask: task(function * (actions) { // eslint-disable-line
+  _fetchDataTask: task(function* (actions) {
     try {
       // Handle the request(s) differently depending on how the actions are provided
       switch (typeOf(actions)) {
         case 'object': {
           const promises = {};
 
-          // Construct an object containing Promises for each action
+          // Construct an object containing promises for each action
           for (let i = 0, keys = Object.keys(actions); i < keys.length; i += 1) {
             promises[keys[i]] = actions[keys[i]]();
           }
@@ -105,42 +111,39 @@ export default Component.extend({
   }).restartable(),
 
   /**
-   * Perform setup operations once we receive all user provided attributes
+   * Set defaults and request data once we have attributes
    */
   didReceiveAttrs() {
     this._super(...arguments);
-
     this.failFast = this.getWithDefault('failFast', true);
 
-    // If component names aren't provided, default to the noop component
-    this.errorComponent = this.getWithDefault('errorComponent', this.noopComponent);
-    this.successComponent = this.getWithDefault('successComponent', this.noopComponent);
-    this.loadingComponent = this.getWithDefault('loadingComponent', this.noopComponent);
-
     // Fetch data
-    // TODO: Only refetch data if the dataActions attr changes, not others
     this.send('fetchData', this.get('dataActions'));
   },
 
   actions: {
     /**
-     * Trigger the `_fetchDataTask` task
+     * Taskify the actions provided via `dataActions` and fetch the data
      */
     fetchData(actions) {
-      let promises = actions;
+      let promiseActions = actions;
 
-      if (isBlank(promises)) {
-        Logger.warn('No actions were provided. Provide an action via the "dataActions" attr.');
+      if (isBlank(promiseActions)) {
+        Logger.warn([
+          'No actions were provided to the "dataActions" attribute of the tri-state component.',
+          'Provide one or more actions that each return a promise.',
+        ].join(' '));
+
         return undefined;
       }
 
       // Create new object to avoid bug with mutating the hash helper object
-      if (typeOf(promises) === 'object') {
-        promises = merge({}, promises);
+      if (typeOf(promiseActions) === 'object') {
+        promiseActions = merge({}, promiseActions);
       }
 
       // Fetch data and set to `taskInstance`
-      this.set('taskInstance', this.get('_fetchDataTask').perform(promises));
+      this.set('taskInstance', this.get('_fetchDataTask').perform(promiseActions));
 
       return this.get('taskInstance');
     },

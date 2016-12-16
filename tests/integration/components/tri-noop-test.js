@@ -5,11 +5,7 @@ moduleForComponent('tri-noop', 'Integration | Component | tri noop', {
   integration: true
 });
 
-test('it renders', function(assert) {
-
-  // Set any properties with this.set('myProperty', 'value');
-  // Handle any actions with this.on('myAction', function(val) { ... });
-
+test('it renders nothing', function(assert) {
   this.render(hbs`{{tri-noop}}`);
 
   assert.equal(this.$().text().trim(), '');
@@ -21,5 +17,5 @@ test('it renders', function(assert) {
     {{/tri-noop}}
   `);
 
-  assert.equal(this.$().text().trim(), 'template block text');
+  assert.equal(this.$().text().trim(), '');
 });
