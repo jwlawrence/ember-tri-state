@@ -4,6 +4,18 @@ import { task } from 'ember-concurrency';
 
 const { Component, computed, isBlank, typeOf, RSVP, merge, Logger } = Ember;
 
+/**
+ * The purpose of this component is to handle the conditional rendering of components based on the
+ * state of one or more batched data requests. Depending on the state of the request the
+ * component will render one of three yielded components: loading, error, or success. A data object
+ * is also yielded to the template containing the results of the request.
+ *
+ * Properties accepted by this component:
+ * --------------------------------------
+ * dataActions {string|array|object} - One or more actions that each return a promise.
+ * failFast    {Boolean}             - Reject request immediately if any of the promises reject.
+ * @module  components/tri-state
+ */
 export default Component.extend({
   layout,
 
@@ -37,18 +49,10 @@ export default Component.extend({
     const noopComponent = this.get('noopComponent');
     const yieldComponent = this.get('yieldComponent');
 
-    if (!taskInstance) {
-      return {
-        error: noopComponent,
-        success: noopComponent,
-        loading: noopComponent,
-      };
-    }
-
     return {
-      error: taskInstance.get('error') ? yieldComponent : noopComponent,
-      success: taskInstance.get('value') ? yieldComponent : noopComponent,
-      loading: taskInstance.get('isRunning') ? yieldComponent : noopComponent,
+      error: taskInstance && taskInstance.get('error') ? yieldComponent : noopComponent,
+      success: taskInstance && taskInstance.get('value') ? yieldComponent : noopComponent,
+      loading: taskInstance && taskInstance.get('isRunning') ? yieldComponent : noopComponent,
     };
   }),
 
@@ -69,7 +73,7 @@ export default Component.extend({
   /**
    * Task that makes the request(s) provided by the `dataActions` attribute. We wrap the
    * request in a concurrency task so we have more control over the state of the request(s).
-   * @type {Task}
+   * @return {Promise}
    */
   _fetchDataTask: task(function* (actions) {
     try {
@@ -124,6 +128,7 @@ export default Component.extend({
   actions: {
     /**
      * Taskify the actions provided via `dataActions` and fetch the data
+     * @return {Promise}
      */
     fetchData(actions) {
       let promiseActions = actions;
