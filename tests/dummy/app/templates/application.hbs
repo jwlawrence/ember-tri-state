@@ -1,0 +1,31 @@
+{{#tri-state
+  dataActions=(hash
+    user=(route-action 'getUser')
+    events=(route-action 'getEvents')
+  )
+  failFast=true
+  as |state data|
+}}
+  {{#state.loading}}
+    {{#tri-loading}}
+      Please wait...
+    {{/tri-loading}}
+  {{/state.loading}}
+
+  {{#state.success}}
+    {{#tri-success name=data.user.name events=data.events as |name events|}}
+      {{name}}
+      <ul>
+        {{#each events as |event|}}
+          <li>{{event.name}} - {{event.location}}</li>
+        {{/each}}
+      </ul>
+    {{/tri-success}}
+  {{/state.success}}
+
+  {{#state.error}}
+    {{#tri-error}}
+     {{data.error}}
+    {{/tri-error}}
+  {{/state.error}}
+{{/tri-state}}
