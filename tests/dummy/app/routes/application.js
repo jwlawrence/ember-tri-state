@@ -5,7 +5,10 @@ export default Ember.Route.extend({
 
   actions: {
     getUser() {
-      return Promise.resolve({ name: 'Josh' });
+      return Promise.resolve({
+        name: 'Josh',
+        time: Date.now(),
+      });
     },
 
     getEvents() {

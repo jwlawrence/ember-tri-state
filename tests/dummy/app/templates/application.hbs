@@ -4,28 +4,34 @@
     events=(route-action 'getEvents')
   )
   failFast=true
-  as |state data|
+  showLastSuccessful=true
+  as |template data actions state|
 }}
-  {{#state.loading}}
+  {{#template.isLoading}}
     {{#tri-loading}}
       Please wait...
     {{/tri-loading}}
-  {{/state.loading}}
+  {{/template.isLoading}}
 
-  {{#state.success}}
-    {{#tri-success name=data.user.name events=data.events as |name events|}}
-      {{name}}
+  {{#template.isSuccess}}
+    {{#tri-success user=data.user events=data.events as |user events|}}
+      {{if state.isLoading 'Updating...'}}
+      <p>User: {{user.name}} | Last updated: {{user.time}}</p>
+      <p>Events</p>
       <ul>
         {{#each events as |event|}}
-          <li>{{event.name}} - {{event.location}}</li>
+          <li>Name: {{event.name}} | Location: {{event.location}}</li>
         {{/each}}
       </ul>
     {{/tri-success}}
-  {{/state.success}}
+  {{/template.isSuccess}}
 
-  {{#state.error}}
+  {{#template.isError}}
     {{#tri-error}}
-     {{data.error}}
+      {{data.error}}
     {{/tri-error}}
-  {{/state.error}}
+  {{/template.isError}}
+
+  <button onclick={{action actions.reload}}>Reload Data</button>
+  <button onclick={{action actions.clear}}>Clear Data</button>
 {{/tri-state}}

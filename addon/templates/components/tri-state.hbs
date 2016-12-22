@@ -1,8 +1,18 @@
 {{yield
   (hash
-    error=(component components.error)
-    success=(component components.success)
-    loading=(component components.loading)
+    isError=(component components.error)
+    isSuccess=(component components.success)
+    isLoading=(component components.loading)
   )
   data
+  (hash
+    fetch=(action 'fetchData')
+    reload=(action 'reloadData')
+    clear=(action 'clearData')
+  )
+  (hash
+    isError=isError
+    isSuccess=isSuccess
+    isLoading=isRunning
+  )
 }}

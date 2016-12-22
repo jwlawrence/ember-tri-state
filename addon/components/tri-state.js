@@ -2,7 +2,7 @@ import Ember from 'ember';
 import layout from 'ember-tri-state/templates/components/tri-state';
 import { task } from 'ember-concurrency';
 
-const { Component, computed, isBlank, typeOf, RSVP, merge, Logger } = Ember;
+const { Component, computed, isBlank, K: noop, Logger, merge, RSVP, typeOf } = Ember;
 
 /**
  * The purpose of this component is to handle the conditional rendering of components based on the
@@ -27,16 +27,13 @@ export default Component.extend({
   resolveAll: computed.not('failFast'),
 
   /**
-   * Name of the component responsible for rendering each state when inactive
-   * @type {String}
+   * Task instance state aliases
    */
-  noopComponent: 'tri-noop',
-
-  /**
-   * Name of the component responsible for rendering each state when active
-   * @type {String}
-   */
-  yieldComponent: 'tri-yield',
+  isRunning: computed.alias('taskInstance.isRunning'),
+  isError: computed.bool('taskInstance.error'),
+  isSuccess: computed.bool('taskInstance.value'),
+  lastSuccessfulValue: computed.alias('_fetchDataTask.lastSuccessful.value'),
+  hasSuccessData: computed.bool('lastSuccessfulValue'),
 
   /**
    * This determines, based on the state and/or outcome of the request, whether a component should
@@ -44,15 +41,22 @@ export default Component.extend({
    * the `yieldComponent` is rendered.
    * @type {Object}
    */
-  components: computed('taskInstance.isRunning', function () {
-    const taskInstance = this.get('taskInstance');
+  components: computed('isRunning', function () {
     const noopComponent = this.get('noopComponent');
     const yieldComponent = this.get('yieldComponent');
 
+    if (this.get('showLastSuccessful') && this.get('hasSuccessData')) {
+      return {
+        error: noopComponent,
+        success: yieldComponent,
+        loading: noopComponent,
+      };
+    }
+
     return {
-      error: taskInstance && taskInstance.get('error') ? yieldComponent : noopComponent,
-      success: taskInstance && taskInstance.get('value') ? yieldComponent : noopComponent,
-      loading: taskInstance && taskInstance.get('isRunning') ? yieldComponent : noopComponent,
+      error: this.get('isError') ? yieldComponent : noopComponent,
+      success: this.get('isSuccess') ? yieldComponent : noopComponent,
+      loading: this.get('isRunning') ? yieldComponent : noopComponent,
     };
   }),
 
@@ -60,11 +64,15 @@ export default Component.extend({
    * Data returned from the task instance, which we yield back to the template.
    * @type {Object}
    */
-  data: computed('taskInstance.isRunning', function () {
+  data: computed('isRunning', function () {
     const taskInstance = this.get('taskInstance');
 
     if (!taskInstance) {
       return null;
+    }
+
+    if (this.get('showLastSuccessful') && this.get('hasSuccessData')) {
+      return this.get('lastSuccessfulValue');
     }
 
     return taskInstance.get('error') || taskInstance.get('value');
@@ -112,16 +120,46 @@ export default Component.extend({
     } catch (e) {
       throw e;
     }
-  }).restartable(),
+  }).cancelOn('willDestroyElement').restartable(),
 
   /**
    * Set defaults and request data once we have attributes
    */
   didReceiveAttrs() {
     this._super(...arguments);
+
+    /**
+     * One or more actions that each return a promise.
+     * @type {Function|Object|Array}
+     */
+    this.dataActions = this.getWithDefault('dataActions', noop);
+
+    /**
+     * Reject request immediately if any of the promises are rejected.
+     * @type {Boolean}
+     */
     this.failFast = this.getWithDefault('failFast', true);
 
-    // Fetch data
+    /**
+     * If this flag is set to true, then always display the most recent successful data regardless
+     * of the results of rejected tasks
+     * @type {Boolean}
+     */
+    this.showLastSuccessful = this.getWithDefault('showLastSuccessful', false);
+
+    /**
+     * Name of the component responsible for rendering each state when inactive
+     * @type {String}
+     */
+    this.noopComponent = this.getWithDefault('noopComponent', 'tri-noop');
+
+    /**
+     * Name of the component responsible for rendering each state when active
+     * @type {String}
+     */
+    this.yieldComponent = this.getWithDefault('yieldComponent', 'tri-yield');
+
+    // Fetch data as soon as possible
     this.send('fetchData', this.get('dataActions'));
   },
 
@@ -139,7 +177,7 @@ export default Component.extend({
           'Provide one or more actions that each return a promise.',
         ].join(' '));
 
-        return undefined;
+        return Promise.resolve(undefined);
       }
 
       // Create new object to avoid bug with mutating the hash helper object
@@ -150,7 +188,23 @@ export default Component.extend({
       // Fetch data and set to `taskInstance`
       this.set('taskInstance', this.get('_fetchDataTask').perform(promiseActions));
 
-      return this.get('taskInstance');
+      return this.get('_fetchDataTask');
+    },
+
+    /**
+     * Reload the data provided by the `dataActions` property
+     */
+    reloadData() {
+      this.send('fetchData', this.get('dataActions'));
+    },
+
+    /**
+     * Clear all data from the component
+     */
+    clearData() {
+      // TODO: Need to figure out what to display here. Currently it's the success component, should
+      // it be nothing instead?
+      // this.send('fetchData', () => Promise.resolve(undefined));
     },
   },
 });
