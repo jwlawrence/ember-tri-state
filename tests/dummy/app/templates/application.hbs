@@ -5,17 +5,23 @@
   )
   failFast=true
   showLastSuccessful=true
-  as |template data actions state|
+  as |tri actions|
 }}
-  {{#template.isLoading}}
+  {{#tri.loading.component}}
     {{#tri-loading}}
       Please wait...
     {{/tri-loading}}
-  {{/template.isLoading}}
+  {{/tri.loading.component}}
 
-  {{#template.isSuccess}}
-    {{#tri-success user=data.user events=data.events as |user events|}}
-      {{if state.isLoading 'Updating...'}}
+  {{#tri.error.component}}
+    {{#tri-error}}
+      {{tri.error.data.error}}
+    {{/tri-error}}
+  {{/tri.error.component}}
+
+  {{#tri.success.component}}
+    {{#tri-success user=tri.success.data.user events=tri.success.data.events as |user events|}}
+      {{if tri.loading.isActive 'Updating...'}}
       <p>User: {{user.name}} | Last updated: {{user.time}}</p>
       <p>Events</p>
       <ul>
@@ -23,15 +29,13 @@
           <li>Name: {{event.name}} | Location: {{event.location}}</li>
         {{/each}}
       </ul>
+      <button onclick={{action actions.reload}}>Reload Data</button>
+      <button onclick={{action actions.fetch (hash
+        user=(route-action 'getUser' 'Arnold')
+        events=(route-action 'getEvents')
+      )}}>
+        Fetch Different Data
+      </button>
     {{/tri-success}}
-  {{/template.isSuccess}}
-
-  {{#template.isError}}
-    {{#tri-error}}
-      {{data.error}}
-    {{/tri-error}}
-  {{/template.isError}}
-
-  <button onclick={{action actions.reload}}>Reload Data</button>
-  <button onclick={{action actions.clear}}>Clear Data</button>
+  {{/tri.success.component}}
 {{/tri-state}}

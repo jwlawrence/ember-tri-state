@@ -4,9 +4,9 @@ export default Ember.Route.extend({
   ajax: Ember.inject.service(),
 
   actions: {
-    getUser() {
+    getUser(name = 'Bernard') {
       return Promise.resolve({
-        name: 'Josh',
+        name: name,
         time: Date.now(),
       });
     },

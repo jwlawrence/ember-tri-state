@@ -1,4 +1,6 @@
-<h1>Loading component</h1>
-<div>
+{{#if hasBlock}}
   {{yield}}
-</div>
+{{else}}
+  <h1>Loading component</h1>
+  <p>Please wait</p>
+{{/if}}
