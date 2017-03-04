@@ -1,0 +1,10 @@
+<div>
+  <button onclick={{action 'update' (hash
+    user=(route-action 'getUser' 'Alonso')
+    events=(route-action 'getEvents')
+  )}}>Alonso</button>
+  <button onclick={{action 'update' (hash
+    user=(route-action 'getUser' 'Vettel')
+    events=(route-action 'getEvents')
+  )}}>Vettel</button>
+</div>

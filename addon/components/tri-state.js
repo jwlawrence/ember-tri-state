@@ -2,7 +2,7 @@ import Ember from 'ember';
 import layout from 'ember-tri-state/templates/components/tri-state';
 import { task } from 'ember-concurrency';
 
-const { Component, computed, isBlank, K: noop, Logger, merge, RSVP, typeOf } = Ember;
+const { Component, computed, inject, isBlank, K: noop, Logger, merge, RSVP, typeOf } = Ember;
 
 /**
  * The purpose of this component is to handle the conditional rendering of components based on the
@@ -17,6 +17,7 @@ const { Component, computed, isBlank, K: noop, Logger, merge, RSVP, typeOf } = E
  *                                            do not successfully resolve a value.
  * showLastSuccessful {Boolean}             - If true, display the last successful data instead of
  *                                            the loading or error component when fetching new data.
+ * listenForEvents    {Boolean}             - Register an event listener for 'update' events
  * noopComponent      {String}              - Component used when not rendering a state
  * yieldComponent     {String}              - Component used when rendering any state by default
  * loadingComponent   {String}              - Override 'yieldComponent' when rendering loading state
@@ -27,6 +28,14 @@ const { Component, computed, isBlank, K: noop, Logger, merge, RSVP, typeOf } = E
  */
 export default Component.extend({
   layout,
+
+  /**
+   * A service that is event aware so we can trigger actions in tri-state from external sources.
+   * Note this is NOT RECOMMENDED as it goes against DDAU and has the potential to introduce memory
+   * leaks if we don't clean up after ourselves. However, it can be useful in certain situations.
+   * @type {Object}
+   */
+  triEvents: inject.service(),
 
   /**
    * Flag used to indicate if we should wait for all promises to resolve or
@@ -77,48 +86,15 @@ export default Component.extend({
   }),
 
   /**
-   * Task that makes the request(s) provided by the `dataActions` attribute. We wrap the
-   * request in a concurrency task so we have more control over the state of the request(s).
-   * @return {Promise}
+   * Remove the event listener when the component is destroyed to prevent memory leaks
    */
-  _fetchDataTask: task(function* (actions) {
-    try {
-      // Handle the request(s) differently depending on how the actions are provided
-      switch (typeOf(actions)) {
-        case 'object': {
-          const promises = {};
+  willDestroy() {
+    this._super(...arguments);
 
-          // Construct an object containing promises for each action
-          for (let i = 0, keys = Object.keys(actions); i < keys.length; i += 1) {
-            promises[keys[i]] = actions[keys[i]]();
-          }
-
-          if (this.get('resolveAll')) {
-            return yield RSVP.hashSettled(promises);
-          }
-
-          return yield RSVP.hash(promises);
-        }
-
-        case 'array': {
-          const promises = actions.map((action) => {
-            return action();
-          });
-
-          if (this.get('resolveAll')) {
-            return yield RSVP.allSettled(promises);
-          }
-
-          return yield RSVP.all(promises);
-        }
-
-        default:
-          return yield actions();
-      }
-    } catch (e) {
-      throw e;
+    if (this.get('listenForEvents')) {
+      this.get('triEvents').off('update', this._updateData);
     }
-  }).cancelOn('willDestroyElement').restartable(),
+  },
 
   /**
    * Set defaults and request data once we have attributes
@@ -175,8 +151,71 @@ export default Component.extend({
      */
     this.loadingComponent = this.getWithDefault('loadingComponent', this.yieldComponent);
 
+    /**
+     * Whether or not we should set an event listener so outside components can trigger data fetches
+     * @type {Boolean}
+     */
+    this.listenForEvents = this.getWithDefault('listenForEvents', false);
+
+    // If we want to allow for outside sources to take action, set up an event listener
+    if (this.listenForEvents) {
+      this.get('triEvents').on('update', this._updateData.bind(this));
+    }
+
     // Fetch data as soon as possible.
     this.send('fetchData', this.get('dataActions'));
+  },
+
+  /**
+   * Task that makes the request(s) provided by the `dataActions` attribute. We wrap the
+   * request in a concurrency task so we have more control over the state of the request(s).
+   * @return {Promise}
+   */
+  _fetchDataTask: task(function* (actions) {
+    try {
+      // Handle the request(s) differently depending on how the actions are provided
+      switch (typeOf(actions)) {
+        case 'object': {
+          const promises = {};
+
+          // Construct an object containing promises for each action
+          for (let i = 0, keys = Object.keys(actions); i < keys.length; i += 1) {
+            promises[keys[i]] = actions[keys[i]]();
+          }
+
+          if (this.get('resolveAll')) {
+            return yield RSVP.hashSettled(promises);
+          }
+
+          return yield RSVP.hash(promises);
+        }
+
+        case 'array': {
+          const promises = actions.map((action) => {
+            return action();
+          });
+
+          if (this.get('resolveAll')) {
+            return yield RSVP.allSettled(promises);
+          }
+
+          return yield RSVP.all(promises);
+        }
+
+        default:
+          return yield actions();
+      }
+    } catch (e) {
+      throw e;
+    }
+  }).cancelOn('willDestroyElement').restartable(),
+
+  /**
+   * Update the request actions and resolve the promises
+   */
+  _updateData(actions) {
+    this.set('dataActions', actions);
+    this.send('fetchData', actions);
   },
 
   actions: {

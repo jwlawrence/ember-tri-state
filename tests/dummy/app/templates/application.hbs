@@ -1,3 +1,7 @@
+<h1>Tri-State</h1>
+
+{{data-controls}}
+
 {{#tri-state
   dataActions=(hash
     user=(route-action 'getUser')
@@ -5,6 +9,7 @@
   )
   failFast=true
   showLastSuccessful=true
+  listenForEvents=true
   as |tri actions|
 }}
   {{#tri.loading.component}}
