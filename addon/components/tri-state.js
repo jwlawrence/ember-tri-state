@@ -59,7 +59,7 @@ export default Component.extend({
    * the `yieldComponent` is rendered.
    * @type {Object}
    */
-  state: computed('isLoading', function () {
+  state: computed('isLoading', 'lastSuccessValue', function () {
     const noopComponent = this.get('noopComponent');
     const showLastSuccessful = this.get('showLastSuccessful') && this.get('hasSuccessData');
     const showError = this.get('isError') && !showLastSuccessful;
@@ -84,17 +84,6 @@ export default Component.extend({
       },
     };
   }),
-
-  /**
-   * Remove the event listener when the component is destroyed to prevent memory leaks
-   */
-  willDestroy() {
-    this._super(...arguments);
-
-    if (this.get('listenForEvents')) {
-      this.get('triEvents').off('update', this._updateData);
-    }
-  },
 
   /**
    * Set defaults and request data once we have attributes
@@ -157,13 +146,45 @@ export default Component.extend({
      */
     this.listenForEvents = this.getWithDefault('listenForEvents', false);
 
-    // If we want to allow for outside sources to take action, set up an event listener
+    // If we want to allow for outside sources to take action, set up event listeners
     if (this.listenForEvents) {
       this.get('triEvents').on('update', this._updateData.bind(this));
+      this.get('triEvents').on('flush', this._flushData.bind(this));
     }
 
-    // Fetch data as soon as possible.
+    // Fetch data once we have the `dataActions`
     this.send('fetchData', this.get('dataActions'));
+  },
+
+  /**
+   * Remove the event listeners when the component is destroyed to prevent memory leaks
+   */
+  willDestroy() {
+    this._super(...arguments);
+
+    if (this.get('listenForEvents')) {
+      this.get('triEvents').off('update', this._updateData);
+      this.get('triEvents').off('flush', this._flushData);
+    }
+  },
+
+  /**
+   * Update the `dataActions` and call the action to fetch data
+   */
+  _updateData(actions) {
+    if (actions) {
+      this.set('dataActions', actions);
+      this.send('fetchData', actions);
+    } else {
+      this.send('reloadData');
+    }
+  },
+
+  /**
+   * Call the action to flush data
+   */
+  _flushData() {
+    this.send('flushData');
   },
 
   /**
@@ -210,14 +231,6 @@ export default Component.extend({
     }
   }).cancelOn('willDestroyElement').restartable(),
 
-  /**
-   * Update the request actions and resolve the promises
-   */
-  _updateData(actions) {
-    this.set('dataActions', actions);
-    this.send('fetchData', actions);
-  },
-
   actions: {
     /**
      * Taskify the actions provided via `dataActions` and fetch the data
@@ -254,6 +267,13 @@ export default Component.extend({
      */
     reloadData() {
       this.send('fetchData', this.get('dataActions'));
+    },
+
+    /**
+     * Flush the last successful data
+     */
+    flushData() {
+      this.set('_fetchDataTask.lastSuccessful.value', null);
     },
   },
 });

@@ -1,11 +1,11 @@
 <h1>Tri-State</h1>
 
-{{data-controls}}
+{{data-controls model=model}}
 
 {{#tri-state
   dataActions=(hash
-    user=(route-action 'getUser')
-    events=(route-action 'getEvents')
+    user=(action model.getUser)
+    events=(action model.getEvents)
   )
   failFast=true
   showLastSuccessful=true
@@ -35,9 +35,10 @@
         {{/each}}
       </ul>
       <button onclick={{action actions.reload}}>Reload Data</button>
+      <button onclick={{action actions.flush}}>Flush Data</button>
       <button onclick={{action actions.fetch (hash
-        user=(route-action 'getUser' 'Arnold')
-        events=(route-action 'getEvents')
+        user=(action model.getUser 'Arnold')
+        events=(action model.getEvents)
       )}}>
         Fetch Different Data
       </button>
