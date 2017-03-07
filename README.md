@@ -62,13 +62,13 @@ The basic idea is that the `tri-state` component accepts an action (or actions) 
   {{/tri.loading.component}}
 
   // Rendered if the request is rejected
-  {{#tri.error.component}}
-    <p>An error occurred: {{tri.error.data.message}}</p>
+  {{#tri.error.component as |error|}}
+    <p>An error occurred: {{error.message}}</p>
   {{/tri.error.component}}
 
   // Rendered if the request resolves successfully
-  {{#tri.success.component}}
-    {{#each tri.success.data as |post|}}
+  {{#tri.success.component as |posts|}}
+    {{#each posts as |post|}}
       {{post.title}}
       {{post.excerpt}}
     {{/each}}
@@ -100,7 +100,7 @@ Multiple `dataActions` can be passed with the `hash` helper or the included `to-
 
 ### Using the yielded `tri` and `action` objects
 
-The `tri` object contains the component name, data, and state for each of the three possible states: 'loading', 'error', 'success'. By accessing the 'component' property of a given state you can define what you want to render in your template when that state is active (see examples above). The 'data' property gives you access to the data returned from your data request.
+The `tri` object contains the component name, and state for each of the three possible states: 'loading', 'error', 'success'. By accessing the 'component' property of a given state you can define what you want to render in your template when that state is active (see examples above). Appropriate data is piped directly into whichever component is being yielded through a `data` attribute.
 
 Behind the scenes we use the amazing [ember-concurrency](http://ember-concurrency.com/) addon to perform the requests which gives us the ability to restart or cancel requests in case the component is destroyed before the request has finished.
 
