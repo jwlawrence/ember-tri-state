@@ -18,14 +18,14 @@
     {{/tri-loading}}
   {{/tri.loading.component}}
 
-  {{#tri.error.component}}
+  {{#tri.error.component as |error|}}
     {{#tri-error}}
-      {{tri.error.data.error}}
+      {{error}}
     {{/tri-error}}
   {{/tri.error.component}}
 
-  {{#tri.success.component}}
-    {{#tri-success user=tri.success.data.user events=tri.success.data.events as |user events|}}
+  {{#tri.success.component as |data|}}
+    {{#tri-success user=data.user events=data.events as |user events|}}
       {{if tri.loading.isActive 'Updating...'}}
       <p>User: {{user.name}} | Last updated: {{user.time}}</p>
       <p>Events</p>

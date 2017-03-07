@@ -2,20 +2,19 @@ import { moduleForComponent, test } from 'ember-qunit';
 import hbs from 'htmlbars-inline-precompile';
 
 moduleForComponent('tri-yield', 'Integration | Component | tri yield', {
-  integration: true
+  integration: true,
 });
 
-test('it renders', function(assert) {
-  this.render(hbs`{{tri-yield}}`);
+test('it yields its data attribute', function(assert) {
+  this.render(hbs`{{tri-yield data="foo"}}`);
 
-  assert.equal(this.$().text().trim(), '');
+  assert.equal(this.$().text().trim(), '', 'it does not output anything');
 
-  // Template block usage:
   this.render(hbs`
-    {{#tri-yield}}
-      template block text
+    {{#tri-yield data="foo" as |data|}}
+      {{data}}
     {{/tri-yield}}
   `);
 
-  assert.equal(this.$().text().trim(), 'template block text');
+  assert.equal(this.$().text().trim(), 'foo', 'it yields `foo`');
 });
