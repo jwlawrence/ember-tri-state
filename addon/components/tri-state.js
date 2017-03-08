@@ -148,8 +148,10 @@ export default Component.extend({
 
     // If we want to allow for outside sources to take action, set up event listeners
     if (this.listenForEvents) {
-      this.get('triEvents').on('update', this._updateData.bind(this));
-      this.get('triEvents').on('flush', this._flushData.bind(this));
+      this._updateData = this._updateData.bind(this);
+      this._flushData = this._flushData.bind(this);
+      this.get('triEvents').on('update', this._updateData);
+      this.get('triEvents').on('flush', this._flushData);
     }
 
     // Fetch data once we have the `dataActions`
