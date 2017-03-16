@@ -24,38 +24,27 @@ Most likely, you want to show the user a page scaffolding that is absent of data
 
 ### Create your fetch action(s)
 
-Rather than returning promises in your model hook, you will directly provide the `tri-state` component an action that returns a promise. Having no promises to wait on in our model hook means the UI renders immediately and we have more control over how we present the page while data loads.
-
-You have a few options for where you define your actions.
-
-1. In your route file.
-  * Since this is where you would normally have all data related actions, you can keep them here and access them in your template by either using [ember-route-action-helper](https://github.com/DockYard/ember-route-action-helper) or by setting them to the controller via `setupController`.
-2. In a higher level component.
-  * You can pass the action from a higher level component via a closure action.
-3. In your controller.
-  * There is debate about whether or not controllers should be used for anything other than decorators, so you might want to think twice about adding actions to your controllers.
-
-For option 1, your route file might look similar to the following example. Note you don't have to return anything from the `model` hook since we'll access the fetch action directly in the `tri-state` component.
+Rather than returning promises or `RSVP.hash` directly from your model hook, you need to return promises in an object. This will allow ember to render the template immediately since Ember only sees an object being returned. Pass these promises into `tri-state`'s `promises` attribute and the state will be derived for you.
 
 ```
 // route - index.js
 import Ember from 'ember';
 
 export default Ember.Route.extend({
-  actions: {
-    fetchPosts() {
-      return this.store.findAll('post');
-    },
+  model() {
+    return {
+      postsRequest: this.store.findAll('post'),
+    };
   },
 });
 ```
 
 ### Include the `tri-state` component in your templates
 
-The basic idea is that the `tri-state` component accepts an action (or actions) that returns a promise and figures out what to render based off of the state of the promise and what you have defined in your template. The component must be used in block form. Here's a simple example:
+The basic idea is that the `tri-state` component accepts promise(s) and figures out what to render based off of the state of the promise and what you have defined in your template. The component must be used in block form. Here's a simple example:
 
 ```
-{{#tri-state dataActions=(route-action 'fetchPosts') as |tri actions| }}
+{{#tri-state promises=model.postsRequest as |tri| }}
   // Rendered while the request is in progress
   {{#tri.loading.component}}
     <p>Loading...</p>
@@ -76,37 +65,33 @@ The basic idea is that the `tri-state` component accepts an action (or actions) 
 {{/tri-state}}
 ```
 
-Multiple `dataActions` can be passed with the `hash` helper or the included `to-array` helper:
+Multiple promises can be provided by grouping them in an array or an object:
 
 ```
 // Single action
-{{#tri-state dataActions=(action 'fetchPost') as |tri actions| }}
+{{#tri-state promises=model.postsRequest as |tri| }}
 ...
 
 // Hash of actions
-{{#tri-state dataActions=(hash
-  post=(action 'fetchPost')
-  auther=(action 'fetchAuthor')
-) as |tri actions| }}
+{{#tri-state promises=(hash
+  post=model.postsRequest
+  author=model.authorRequest
+) as |tri| }}
 ...
 
 // Array of actions
 {{#tri-state dataActions=(to-array
-  (action 'fetchPost')
-  (action 'fetchAuthor')
-) as |tri actions| }}
+  model.postsRequest
+  model.authorRequest
+) as |tri| }}
 ...
 ```
 
-### Using the yielded `tri` and `action` objects
+### Using the yielded `tri` data
 
 The `tri` object contains the component name, and state for each of the three possible states: 'loading', 'error', 'success'. By accessing the 'component' property of a given state you can define what you want to render in your template when that state is active (see examples above). Appropriate data is piped directly into whichever component is being yielded through a `data` attribute.
 
-Behind the scenes we use the amazing [ember-concurrency](http://ember-concurrency.com/) addon to perform the requests which gives us the ability to restart or cancel requests in case the component is destroyed before the request has finished.
-
 A word on component rendering. You can explicitly set the component that is rendered for any active state by overriding the `yieldComponent` attribute or you can override specific state components by overriding the `loadingComponent`, `errorComponent`, or `successComponent` attributes.
-
-The 'actions' object exposes the `fetchData` and `reloadData` actions. The `reloadData` action does exactly that, re-triggers the last request. The `fetchData` action is used to make a different request. It accepts the same arguments as `dataActions` (functions that return promises).
 
 ## How do I contribute to this addon?
 

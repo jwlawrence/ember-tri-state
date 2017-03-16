@@ -1,28 +1,36 @@
 import Ember from 'ember';
 import layout from 'ember-tri-state/templates/components/tri-state';
-import { task } from 'ember-concurrency';
 
-const { Component, computed, inject, isBlank, K: noop, Logger, merge, RSVP, typeOf } = Ember;
+const {
+  Component,
+  computed,
+  isPresent,
+  K: noop,
+  Object: EmberObject,
+  PromiseProxyMixin,
+  RSVP,
+} = Ember;
+
+const PromiseObject = EmberObject.extend(PromiseProxyMixin);
 
 /**
  * The purpose of this component is to handle the conditional rendering of components based on the
- * state of one or more batched data requests. Depending on the state of the request the
- * component will render one of three yielded components: loading, error, or success. An 'actions'
- * object is also yielded to the template allowing manipulation of the data.
+ * state of one or more batched promises. Depending on the state of the promises the component will
+ * render one of three yielded components: loading, error, or success.
  *
  * Attributes accepted by this component:
  * --------------------------------------
- * dataActions        {string|array|object} - One or more actions that each return a promise.
- * failFast           {Boolean}             - Reject request immediately if any of the promises
- *                                            do not successfully resolve a value.
+ * promises           {Promise|Array|Object}- One or more promises to compute component state from
  * showLastSuccessful {Boolean}             - If true, display the last successful data instead of
- *                                            the loading or error component when fetching new data.
- * listenForEvents    {Boolean}             - Register an event listener for 'update' events
+ *                                            the loading or error component when fetching new data
+ * forceResolveAll    {Boolean}             - Fulfill `promise` regardless of whether any of the
+ *                                            batched `promises` reject.
+ * onFulfilledData    {Function}            - Callback called when promise is successfully fulfilled
  * noopComponent      {String}              - Component used when not rendering a state
  * yieldComponent     {String}              - Component used when rendering any state by default
- * loadingComponent   {String}              - Override 'yieldComponent' when rendering loading state
- * errorComponent     {String}              - Override 'yieldComponent' when rendering error state
- * successComponent   {String}              - Override 'yieldComponent' when rendering success state
+ * loadingComponent   {String}              - Override `yieldComponent` when rendering loading state
+ * errorComponent     {String}              - Override `yieldComponent` when rendering error state
+ * successComponent   {String}              - Override `yieldComponent` when rendering success state
  *
  * @module  components/tri-state
  */
@@ -30,252 +38,156 @@ export default Component.extend({
   layout,
 
   /**
-   * A service that is event aware so we can trigger actions in tri-state from external sources.
-   * Note this is NOT RECOMMENDED as it goes against DDAU and has the potential to introduce memory
-   * leaks if we don't clean up after ourselves. However, it can be useful in certain situations.
-   * @type {Object}
+   * Computes component state based on the promise state and associated data
+   * @param {String} promiseState The derived state of the promises
+   * @param {*} data The associated data
+   * @private
    */
-  triEvents: inject.service(),
-
-  /**
-   * Flag used to indicate if we should wait for all promises to resolve or
-   * if we should reject immediately as soon as one fails.
-   * @type {Boolean}
-   */
-  resolveAll: computed.not('failFast'),
-
-  /**
-   * Task aliases
-   */
-  isLoading: computed.alias('taskInstance.isRunning'),
-  isError: computed.bool('taskInstance.error'),
-  isSuccess: computed.bool('taskInstance.value'),
-  lastSuccessValue: computed.alias('_fetchDataTask.lastSuccessful.value'),
-  hasSuccessData: computed.bool('lastSuccessValue'),
-
-  /**
-   * This determines, based on the state and/or outcome of the request, whether a component should
-   * be rendered or not. When a state is false the `noopComponent` will be rendered, when it is true
-   * the `yieldComponent` is rendered.
-   * @type {Object}
-   */
-  state: computed('isLoading', 'lastSuccessValue', function () {
-    const noopComponent = this.get('noopComponent');
-    const showLastSuccessful = this.get('showLastSuccessful') && this.get('hasSuccessData');
-    const showError = this.get('isError') && !showLastSuccessful;
-    const showLoading = this.get('isLoading') && !showLastSuccessful;
-    const showSuccess = this.get('isSuccess') || showLastSuccessful;
+  triState: computed('promise.isPending', function () {
+    const canShowLastSuccessful = this.get('showLastSuccessful') && this.get('_lastResolvedData');
+    const willRenderLoadingComponent = this.get('promise.isPending') && !canShowLastSuccessful;
+    const willRenderErrorComponent = this.get('promise.isRejected') &&
+                                     !canShowLastSuccessful &&
+                                     !this.get('forceResolveAll');
+    const willRenderSuccessComponent = this.get('promise.isFulfilled') ||
+                                       (this.get('promise.isPending') && canShowLastSuccessful);
 
     return {
       error: {
-        isActive: this.get('isError'),
-        component: showError ? this.get('errorComponent') : noopComponent,
-        data: this.get('taskInstance.error'),
+        isActive: this.get('promise.isRejected'),
+        component: willRenderErrorComponent ? this.errorComponent : this.noopComponent,
+        data: willRenderErrorComponent ? this.get('promise.reason') : null,
       },
       success: {
-        isActive: this.get('isSuccess'),
-        component: showSuccess ? this.get('successComponent') : noopComponent,
-        data: this.get('lastSuccessValue'),
+        isActive: this.get('promise.isFulfilled'),
+        component: willRenderSuccessComponent ? this.successComponent : this.noopComponent,
+        data: willRenderSuccessComponent ? this.get('_lastResolvedData') : null,
       },
       loading: {
-        isActive: this.get('isLoading'),
-        component: showLoading ? this.get('loadingComponent') : noopComponent,
-        data: null,
+        isActive: this.get('promise.isPending'),
+        component: willRenderLoadingComponent ? this.loadingComponent : this.noopComponent,
       },
     };
   }),
 
   /**
-   * Set defaults and request data once we have attributes
+   * Helper function to resolve promises based on how they are provided
+   * @param {Promise|Array|Object} promises The promises to resolve
+   * @return {Promise} Promise which resolves when all promises have resolved
+   * @private
+   */
+  _resolvePromises(promises) {
+    if (promises instanceof Promise) {
+      return promises;
+    }
+
+    if (Array.isArray(promises)) {
+      if (this.get('forceResolveAll')) {
+        return RSVP.allSettled(promises);
+      }
+      return RSVP.all(promises);
+    }
+
+    if (typeof promises === 'object') {
+      if (this.get('forceResolveAll')) {
+        return RSVP.hashSettled(promises);
+      }
+      return RSVP.hash(promises);
+    }
+
+    return promises;
+  },
+
+  /**
+   * Set defaults and resolve `promise` once we have attributes
    */
   didReceiveAttrs() {
     this._super(...arguments);
 
     /**
-     * One or more actions that each return a promise.
-     * @type {Function|Object|Array}
+     * Cached data from the last fulfilled promise to use when `showLastSuccessful` is true
+     * @type {*}
+     * @private
      */
-    this.dataActions = this.getWithDefault('dataActions', noop);
+    this._lastResolvedData = this._lastResolvedData || null;
 
     /**
-     * Reject request immediately if any of the promises are rejected.
-     * @type {Boolean}
+     * One or more actions that each return a promise.
+     * @type {Promise|Object|Array}
      */
-    this.failFast = this.getWithDefault('failFast', true);
+    this.promises = this.get('promises');
 
     /**
      * If true, display the last successful data instead of the loading or error state when
      * fetching new data.
      * @type {Boolean}
+     * @default false
      */
     this.showLastSuccessful = this.getWithDefault('showLastSuccessful', false);
 
     /**
+     * Fulfill `promise`, even if one or more batched `promises` fail
+     * @type {Boolean}
+     * @default false
+     */
+    this.forceResolveAll = this.getWithDefault('forceResolveAll', false);
+
+    /**
      * Name of the component to render when any state is inactive.
      * @type {String}
+     * @default 'tri-noop'
      */
     this.noopComponent = this.getWithDefault('noopComponent', 'tri-noop');
 
     /**
      * Name of the component to render when any state is active, unless overridden.
      * @type {String}
+     * @default 'tri-yield'
      */
     this.yieldComponent = this.getWithDefault('yieldComponent', 'tri-yield');
 
     /**
      * Name of the component to render when the error state is active.
      * @type {String}
+     * @default 'tri-yield'
      */
     this.errorComponent = this.getWithDefault('errorComponent', this.yieldComponent);
 
     /**
      * Name of the component to render when the success state is active.
      * @type {String}
+     * @default 'tri-yield'
      */
     this.successComponent = this.getWithDefault('successComponent', this.yieldComponent);
 
     /**
      * Name of the component to render when the loading state is active.
      * @type {String}
+     * @default 'tri-yield'
      */
     this.loadingComponent = this.getWithDefault('loadingComponent', this.yieldComponent);
 
     /**
-     * Whether or not we should set an event listener so outside components can trigger data fetches
-     * @type {Boolean}
+     * Callback called when the promise has successfully resolved
+     * @type {Function}
+     * @default noop
      */
-    this.listenForEvents = this.getWithDefault('listenForEvents', false);
-
-    // If we want to allow for outside sources to take action, set up event listeners
-    if (this.listenForEvents) {
-      this._updateData = this._updateData.bind(this);
-      this._flushData = this._flushData.bind(this);
-      this.get('triEvents').on('update', this._updateData);
-      this.get('triEvents').on('flush', this._flushData);
-    }
-
-    // Fetch data once we have the `dataActions`
-    this.send('fetchData', this.get('dataActions'));
-  },
-
-  /**
-   * Remove the event listeners when the component is destroyed to prevent memory leaks
-   */
-  willDestroy() {
-    this._super(...arguments);
-
-    if (this.get('listenForEvents')) {
-      this.get('triEvents').off('update', this._updateData);
-      this.get('triEvents').off('flush', this._flushData);
-    }
-  },
-
-  /**
-   * Update the `dataActions` and call the action to fetch data
-   */
-  _updateData(actions) {
-    if (actions) {
-      this.set('dataActions', actions);
-      this.send('fetchData', actions);
-    } else {
-      this.send('reloadData');
-    }
-  },
-
-  /**
-   * Call the action to flush data
-   */
-  _flushData() {
-    this.send('flushData');
-  },
-
-  /**
-   * Task that makes the request(s) provided by the `dataActions` attribute. We wrap the
-   * request in a concurrency task so we have more control over the state of the request(s).
-   * @return {Promise}
-   */
-  _fetchDataTask: task(function* (actions) {
-    try {
-      // Handle the request(s) differently depending on how the actions are provided
-      switch (typeOf(actions)) {
-        case 'object': {
-          const promises = {};
-
-          // Construct an object containing promises for each action
-          for (let i = 0, keys = Object.keys(actions); i < keys.length; i += 1) {
-            promises[keys[i]] = actions[keys[i]]();
-          }
-
-          if (this.get('resolveAll')) {
-            return yield RSVP.hashSettled(promises);
-          }
-
-          return yield RSVP.hash(promises);
-        }
-
-        case 'array': {
-          const promises = actions.map((action) => {
-            return action();
-          });
-
-          if (this.get('resolveAll')) {
-            return yield RSVP.allSettled(promises);
-          }
-
-          return yield RSVP.all(promises);
-        }
-
-        default:
-          return yield actions();
-      }
-    } catch (e) {
-      throw e;
-    }
-  }).cancelOn('willDestroyElement').restartable(),
-
-  actions: {
-    /**
-     * Taskify the actions provided via `dataActions` and fetch the data
-     * @return {Promise}
-     */
-    fetchData(actions) {
-      let promiseActions = actions;
-
-      if (isBlank(promiseActions)) {
-        Logger.warn([
-          'No actions were provided to the "dataActions" attribute of the tri-state component.',
-          'Provide one or more actions that each return a promise.',
-        ].join(' '));
-
-        return Promise.resolve(undefined);
-      }
-
-      // Keep a reference to the most recent request so we can reload it
-      this.set('dataActions', promiseActions);
-
-      // Create new object to avoid bug with mutating the hash helper object
-      if (typeOf(promiseActions) === 'object') {
-        promiseActions = merge({}, promiseActions);
-      }
-
-      // Fetch data and set to `taskInstance`
-      this.set('taskInstance', this.get('_fetchDataTask').perform(promiseActions));
-
-      return this.get('_fetchDataTask');
-    },
+    this.onFulfilledData = this.getWithDefault('onFulfilledData', noop);
 
     /**
-     * Reload the data provided by the `dataActions` property
+     * If one or more promises are provided, batch into a single PromiseProxy `promise` object
      */
-    reloadData() {
-      this.send('fetchData', this.get('dataActions'));
-    },
+    if (isPresent(this.promises)) {
+      const promise = this._resolvePromises(this.promises);
 
-    /**
-     * Flush the last successful data
-     */
-    flushData() {
-      this.set('_fetchDataTask.lastSuccessful.value', null);
-    },
+      // Create a promise proxy object that is state aware
+      this.set('promise', PromiseObject.create({ promise }));
+
+      // If promise is fulfilled, cache data and trigger callback
+      promise.then((data) => {
+        this._lastResolvedData = data;
+        this.onFulfilledData(data);
+      });
+    }
   },
 });

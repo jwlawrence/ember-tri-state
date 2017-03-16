@@ -19,7 +19,6 @@
   },
   "dependencies": {
     "ember-cli-babel": "^5.1.7",
-    "ember-concurrency": "0.7.16",
     "ember-cli-htmlbars": "^1.0.10"
   },
   "devDependencies": {

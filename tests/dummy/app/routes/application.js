@@ -1,40 +1,47 @@
 import Ember from 'ember';
 
 export default Ember.Route.extend({
-  ajax: Ember.inject.service(),
-  triEvents: Ember.inject.service(),
-
   model() {
-    this.get('triEvents').trigger('update');
-
     return {
-      getUser: this.getUser,
-      getEvents: this.getEvents,
+      userRequest: this.getUser(),
+      eventsRequest: this.getEvents(),
     }
   },
 
   getUser(name = 'Bernard') {
-    return Promise.resolve({
-      name,
-      time: Date.now(),
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve({
+          name,
+          time: Date.now(),
+        })
+      }, 1000)
     });
   },
 
   getEvents() {
-    return Promise.resolve([
-      {
-        name: 'foo',
-        location: 'SF',
-      },
-      {
-        name: 'bar',
-        location: 'SV',
-      }
-    ]);
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve([
+          {
+            name: 'foo',
+            location: 'SF',
+          },
+          {
+            name: 'bar',
+            location: 'SV',
+          }
+        ]);
+      }, 2000)
+    });
   },
 
   actions: {
-    refresh() {
+    flushAndRefreshModel() {
+      this.refresh();
+    },
+
+    refreshModel() {
       this.refresh();
     }
   },

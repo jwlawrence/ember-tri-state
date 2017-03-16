@@ -1,16 +1,17 @@
 <h1>Tri-State</h1>
 
-{{data-controls model=model}}
+<button {{action 'flushAndRefreshModel'}}>Flush and Reload Data</button>
+<button {{action 'refreshModel'}}>Reload Data</button>
 
 {{#tri-state
-  dataActions=(hash
-    user=(action model.getUser)
-    events=(action model.getEvents)
+  promises=(hash
+    user=model.userRequest
+    events=model.eventsRequest
   )
-  failFast=true
-  showLastSuccessful=true
-  listenForEvents=true
-  as |tri actions|
+  showLastSuccessful=showLastSuccessful
+  forceResolveAll=false
+  onFulfilledData=(action 'resetShowLastSuccessful')
+  as |tri|
 }}
   {{#tri.loading.component}}
     {{#tri-loading}}
@@ -20,7 +21,7 @@
 
   {{#tri.error.component as |error|}}
     {{#tri-error}}
-      {{error}}
+      {{error.name}}
     {{/tri-error}}
   {{/tri.error.component}}
 
@@ -34,14 +35,6 @@
           <li>Name: {{event.name}} | Location: {{event.location}}</li>
         {{/each}}
       </ul>
-      <button onclick={{action actions.reload}}>Reload Data</button>
-      <button onclick={{action actions.flush}}>Flush Data</button>
-      <button onclick={{action actions.fetch (hash
-        user=(action model.getUser 'Arnold')
-        events=(action model.getEvents)
-      )}}>
-        Fetch Different Data
-      </button>
     {{/tri-success}}
   {{/tri.success.component}}
 {{/tri-state}}

@@ -1,21 +1,16 @@
 {{yield
   (hash
     error=(hash
-      component=(component state.error.component data=state.error.data)
-      isActive=state.error.isActive
+      component=(component triState.error.component data=triState.error.data)
+      isActive=triState.error.isActive
     )
     success=(hash
-      component=(component state.success.component data=state.success.data)
-      isActive=state.success.isActive
+      component=(component triState.success.component data=triState.success.data)
+      isActive=triState.success.isActive
     )
     loading=(hash
-      component=(component state.loading.component)
-      isActive=state.loading.isActive
+      component=(component triState.loading.component)
+      isActive=triState.loading.isActive
     )
-  )
-  (hash
-    fetch=(action 'fetchData')
-    reload=(action 'reloadData')
-    flush=(action 'flushData')
   )
 }}
