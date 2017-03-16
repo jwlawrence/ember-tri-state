@@ -24,7 +24,7 @@ Most likely, you want to show the user a page scaffolding that is absent of data
 
 ### Create your fetch action(s)
 
-Rather than returning promises or `RSVP.hash` directly from your model hook, you need to return promises in an object. This will allow ember to render the template immediately since Ember only sees an object being returned. Pass these promises into `tri-state`'s promises attribute and the state will be derived for you.
+Rather than returning promises or `RSVP.hash` directly from your model hook, you need to return promises in an object. This will allow ember to render the template immediately since Ember only sees an object being returned. Pass these promises into `tri-state`'s `promises` attribute and the state will be derived for you.
 
 ```
 // route - index.js
@@ -65,7 +65,7 @@ The basic idea is that the `tri-state` component accepts promise(s) and figures 
 {{/tri-state}}
 ```
 
-Multiple `promises` can be passed with the `hash` helper or the included `to-array` helper:
+Multiple promises can be provided by grouping them in an array or an object:
 
 ```
 // Single action

@@ -20,7 +20,7 @@ export default Ember.Route.extend({
   },
 
   getEvents() {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       setTimeout(() => {
         resolve([
           {
