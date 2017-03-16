@@ -9,7 +9,8 @@
     events=model.eventsRequest
   )
   showLastSuccessful=showLastSuccessful
-  onResolvedData=(action 'resetShowLastSuccessful')
+  forceResolveAll=false
+  onFulfilledData=(action 'resetShowLastSuccessful')
   as |tri|
 }}
   {{#tri.loading.component}}
@@ -20,7 +21,7 @@
 
   {{#tri.error.component as |error|}}
     {{#tri-error}}
-      {{error}}
+      {{error.name}}
     {{/tri-error}}
   {{/tri.error.component}}
 
