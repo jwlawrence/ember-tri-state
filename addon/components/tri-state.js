@@ -109,7 +109,7 @@ export default Component.extend({
      * @type {*}
      * @private
      */
-    this._lastResolvedData = this._lastResolvedData || false;
+    this._lastResolvedData = this._lastResolvedData || null;
 
     /**
      * One or more actions that each return a promise.
