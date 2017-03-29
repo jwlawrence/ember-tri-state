@@ -1,4 +1,6 @@
-<h1>Error component</h1>
-<div>
-  {{yield}}
-</div>
+{{#if hasBlock}}
+  {{yield data}}
+{{else}}
+  <h1>Error component</h1>
+  <p>{{data}}</p>
+{{/if}}

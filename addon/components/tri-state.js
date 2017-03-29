@@ -77,7 +77,7 @@ export default Component.extend({
    * @private
    */
   _resolvePromises(promises) {
-    if (promises instanceof Promise) {
+    if (promises && typeof promises.then === 'function') {
       return promises;
     }
 

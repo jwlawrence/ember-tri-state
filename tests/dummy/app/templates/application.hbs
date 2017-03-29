@@ -14,15 +14,13 @@
   as |tri|
 }}
   {{#tri.loading.component}}
-    {{#tri-loading}}
-      Please wait...
-    {{/tri-loading}}
+    <h1>Loading Component</h1>
+    <p>Please wait...</p>
   {{/tri.loading.component}}
 
   {{#tri.error.component as |error|}}
-    {{#tri-error}}
-      {{error.name}}
-    {{/tri-error}}
+    <h1>Error Component</h1>
+    <p>{{error.name}}</p>
   {{/tri.error.component}}
 
   {{#tri.success.component as |data|}}
@@ -36,5 +34,22 @@
         {{/each}}
       </ul>
     {{/tri-success}}
+  {{/tri.success.component}}
+{{/tri-state}}
+
+
+{{#tri-state
+  promises=model.postRequest
+  showLastSuccessful=showLastSuccessful
+  onFulfilledData=(action 'resetShowLastSuccessful')
+  loadingComponent='tri-loading'
+  errorComponent='tri-error'
+  as |tri|
+}}
+  {{tri.loading.component}}
+  {{tri.error.component}}
+  {{#tri.success.component as |data|}}
+    <h1>Success Component</h1>
+    <p>Post: {{data.title}}</p>
   {{/tri.success.component}}
 {{/tri-state}}

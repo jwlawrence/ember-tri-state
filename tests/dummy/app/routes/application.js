@@ -1,12 +1,21 @@
 import Ember from 'ember';
+import { task, timeout } from 'ember-concurrency';
 
 export default Ember.Route.extend({
   model() {
     return {
       userRequest: this.getUser(),
       eventsRequest: this.getEvents(),
+      postRequest: this.get('getPost').perform(),
     }
   },
+
+  getPost: task(function * () {
+    yield timeout(1000);
+    return {
+      title: 'Hello World',
+    }
+  }).cancelOn('deactivate').restartable(),
 
   getUser(name = 'Bernard') {
     return new Promise((resolve, reject) => {
