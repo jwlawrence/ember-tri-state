@@ -2,7 +2,7 @@
 
 ## What is this?
 
-ember-tri-state is an Ember addon that primarily provides a `tri-state` component, the purpose of which is to manage what is rendered to the UI depending on the state of a provided promise (or promises).
+ember-tri-state is an Ember addon that aims to make loading data into different sections of your template less of a headache. This is accomplished through a `tri-state` component, which dynamically renders 'loading', 'error', and 'success' components depending on the state of a provided promise (or collection of promises).
 
 #### *Warning: This is work in progress and currently only works on Ember 2.10 or higher.*
 
@@ -10,11 +10,13 @@ ember-tri-state is an Ember addon that primarily provides a `tri-state` componen
 
 ## Why would I use it?
 
-By default, if you return a promise as part of a route's `model` hook Ember blocks rendering until that promise resolves. Of course you can leverage loading substates, but they don't offer much flexibility in how you present loading feedback to the user. This is fine for basic use cases, but it becomes frustrating when the request is slow or the returned data isn't vital to the initial page load.
+Basically, perceived performance gains and improved feedback for your users.
 
-It becomes even more of an issue when you want to make multiple requests in a given route. If you return an `RSVP.hash` in your model hook, your users will be stuck waiting until all of the promises resolve (or one is rejected) rather than having them resolve individually.
+By default, if you return a promise as part of a route's `model` hook Ember blocks rendering until that promise resolves. Of course you can leverage loading substates, but they don't offer much flexibility and are tied to routes. This is fine for basic use cases, but becomes cumbersome when you have multiple requests being made on a route and you want to render them independently.
 
-Most likely, you want to show the user a page scaffolding that is absent of data and show the loading state of each request individually. This way different sections of your page can show content for the 'loading', 'error', or 'success' states of each request. The goal of ember-tri-state is to make this a trivial task.
+If you return an `RSVP.hash` in your model hook, your users will be stuck waiting until all of the promises resolve (or one is rejected) rather than having them resolve individually.
+
+Most likely, you want to show the user a page scaffolding that is initially absent of data and displaying the loading state of each request individually. This way different sections of your page can show content for the 'loading', 'error', or 'success' states of each request as the promises resolve. The goal of ember-tri-state is to make this a trivial task.
 
 ## How do I use it?
 
@@ -24,7 +26,7 @@ Most likely, you want to show the user a page scaffolding that is absent of data
 
 ### Create your fetch action(s)
 
-Rather than returning promises or `RSVP.hash` directly from your model hook, you need to return promises in an object. This will allow ember to render the template immediately since Ember only sees an object being returned. Pass these promises into `tri-state`'s `promises` attribute and the state will be derived for you.
+Rather than returning promises or a `RSVP.hash` directly from your model hook, you need to return promises (or thenables such as an ember-concurrency task) in an object. This will allow Ember to render the template immediately since it only sees an object being returned. Pass these promises into `tri-state`'s `promises` attribute and the state will be derived for you.
 
 ```
 // route - index.js
@@ -41,7 +43,7 @@ export default Ember.Route.extend({
 
 ### Include the `tri-state` component in your templates
 
-The basic idea is that the `tri-state` component accepts promise(s) and figures out what to render based off of the state of the promise and what you have defined in your template. The component must be used in block form. Here's a simple example:
+The `tri-state` component accepts promise(s) and figures out what to render based on of the state of the promise and what you have defined inside the tri-state component blocks. The component must be used in block form. Here's a simple example:
 
 ```
 {{#tri-state promises=model.postsRequest as |tri| }}
@@ -65,7 +67,27 @@ The basic idea is that the `tri-state` component accepts promise(s) and figures 
 {{/tri-state}}
 ```
 
-Multiple promises can be provided by grouping them in an array or an object:
+By default the "loading", "error", and "success" components will either yield whatever is placed in their block, or display nothing if they are not active. You can provide the names of components to override these values and use them inline (or block), which can save some space if you have global components you want to reuse across the app.
+
+```
+{{#tri-state
+  promises=model.postsRequest
+  loadingComponent="my-loading-component"
+  errorComponent="my-error-component"
+  as |tri|
+}}
+  // Renders "my-loading-component" while the request is in progress
+  {{tri.loading.component}}
+
+  // Renders "my-error-component" if the request is rejected
+  // The component has access to the response via the "data" attr
+  {{tri.error.component}}
+
+  ...
+{{/tri-state}}
+```
+
+Multiple promises can be provided by grouping them in an array or an object. This can be done in a parent component or controller and set to a property or directly in the template via the `hash` helper or a custom `to-array` helper (not-provided):
 
 ```
 // Single action
@@ -87,13 +109,17 @@ Multiple promises can be provided by grouping them in an array or an object:
 ...
 ```
 
-### Using the yielded `tri` data
+### Using the yielded `tri` object
 
 The `tri` object contains the component name, and state for each of the three possible states: 'loading', 'error', 'success'. By accessing the 'component' property of a given state you can define what you want to render in your template when that state is active (see examples above). Appropriate data is piped directly into whichever component is being yielded through a `data` attribute.
 
-A word on component rendering. You can explicitly set the component that is rendered for any active state by overriding the `yieldComponent` attribute or you can override specific state components by overriding the `loadingComponent`, `errorComponent`, or `successComponent` attributes.
+You also have access to an `isActive` property for each state that you can use in conjunction with `showLastSuccessful` to give the user feedback that a request is being made while still displaying the last successfully fetched value. This is helpful when doing something like "load more" where you want to make a new request for more data, but continue displaying the current results.
+
+A word on component rendering. You can explicitly set the component that is rendered for any active state by overriding the `yieldComponent` attribute or you can override specific state components by overriding the `loadingComponent`, `errorComponent`, or `successComponent` attributes. See example above.
 
 ## How do I contribute to this addon?
+
+Have an idea on how to make this better? Please submit and issue, or even better, a PR.
 
 ### Installation
 
