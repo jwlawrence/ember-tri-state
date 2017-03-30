@@ -13,19 +13,19 @@
   onFulfilledData=(action 'resetShowLastSuccessful')
   as |tri|
 }}
-  {{#tri.loading.component}}
+  {{#tri.loading}}
     <h1>Loading Component</h1>
     <p>Please wait...</p>
-  {{/tri.loading.component}}
+  {{/tri.loading}}
 
-  {{#tri.error.component as |error|}}
+  {{#tri.error as |error|}}
     <h1>Error Component</h1>
     <p>{{error.name}}</p>
-  {{/tri.error.component}}
+  {{/tri.error}}
 
-  {{#tri.success.component as |data|}}
+  {{#tri.success as |data|}}
     {{#tri-success user=data.user events=data.events as |user events|}}
-      {{if tri.loading.isActive 'Updating...'}}
+      {{if tri.isLoading 'Updating...'}}
       <p>User: {{user.name}} | Last updated: {{user.time}}</p>
       <p>Events</p>
       <ul>
@@ -34,7 +34,7 @@
         {{/each}}
       </ul>
     {{/tri-success}}
-  {{/tri.success.component}}
+  {{/tri.success}}
 {{/tri-state}}
 
 
@@ -46,10 +46,10 @@
   errorComponent='tri-error'
   as |tri|
 }}
-  {{tri.loading.component}}
-  {{tri.error.component}}
-  {{#tri.success.component as |data|}}
+  {{tri.loading}}
+  {{tri.error}}
+  {{#tri.success as |data|}}
     <h1>Success Component</h1>
     <p>Post: {{data.title}}</p>
-  {{/tri.success.component}}
+  {{/tri.success}}
 {{/tri-state}}

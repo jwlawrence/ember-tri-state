@@ -6,7 +6,7 @@ ember-tri-state is an Ember addon that aims to make loading data into different 
 
 Check out the [demo](https://ember-twiddle.com/0334972688d8ccf699b820d783f1b624?openFiles=routes.application.js%2Ctemplates.components.x-error.hbs)
 
-#### *Warning: This is work in progress and currently only works on Ember 2.10 or higher.*
+#### *Warning: This is work in progress and currently only works on Ember 2.10 or higher. Until this is >= v1.0.0 you should assume minor version bumps contain breaking changes.*
 
 *Caveat: Since we bypass the `model` hook in the route fastboot will render the page immediately without any data. If you are relying on fastboot for SEO, you will probably want to continue returning critical data in your model hook and using `tri-state` only for non-SEO imperative content (like loading tweets or comments for example)*
 
@@ -50,22 +50,22 @@ The `tri-state` component accepts promise(s) and figures out what to render base
 ```
 {{#tri-state promises=model.postsRequest as |tri| }}
   // Rendered while the request is in progress
-  {{#tri.loading.component}}
+  {{#tri.loading}}
     <p>Loading...</p>
-  {{/tri.loading.component}}
+  {{/tri.loading}}
 
   // Rendered if the request is rejected
-  {{#tri.error.component as |error|}}
+  {{#tri.error as |error|}}
     <p>An error occurred: {{error.message}}</p>
-  {{/tri.error.component}}
+  {{/tri.error}}
 
   // Rendered if the request resolves successfully
-  {{#tri.success.component as |posts|}}
+  {{#tri.success as |posts|}}
     {{#each posts as |post|}}
       {{post.title}}
       {{post.excerpt}}
     {{/each}}
-  {{/tri.success.component}}
+  {{/tri.success}}
 {{/tri-state}}
 ```
 
@@ -79,11 +79,11 @@ By default the "loading", "error", and "success" components will either yield wh
   as |tri|
 }}
   // Renders "my-loading-component" while the request is in progress
-  {{tri.loading.component}}
+  {{tri.loading}}
 
   // Renders "my-error-component" if the request is rejected
   // The component has access to the response via the "data" attr
-  {{tri.error.component}}
+  {{tri.error}}
 
   ...
 {{/tri-state}}
@@ -113,9 +113,9 @@ Multiple promises can be provided by grouping them in an array or an object. Thi
 
 ### Using the yielded `tri` object
 
-The `tri` object contains the component name, and state for each of the three possible states: 'loading', 'error', 'success'. By accessing the 'component' property of a given state you can define what you want to render in your template when that state is active (see examples above). Appropriate data is piped directly into whichever component is being yielded through a `data` attribute.
+The `tri` object contains the component name, and state for each of the three possible states: 'loading', 'error', 'success'. By referencing the property whose name matches one of the three states you can define what you want to render in your template when that state is active (see examples above). Appropriate data is piped directly into whichever component is being yielded through a `data` attribute.
 
-You also have access to an `isActive` property for each state that you can use in conjunction with `showLastSuccessful` to give the user feedback that a request is being made while still displaying the last successfully fetched value. This is helpful when doing something like "load more" where you want to make a new request for more data, but continue displaying the current results.
+You also have access to `isLoading`, `isError`, and `isSuccess` properties that you can use in conjunction with `showLastSuccessful` to give the user feedback that a request is being made while still displaying the last successfully fetched value. This is helpful when doing something like "load more" where you want to make a new request for more data, but continue displaying the current results.
 
 A word on component rendering. You can explicitly set the component that is rendered for any active state by overriding the `yieldComponent` attribute or you can override specific state components by overriding the `loadingComponent`, `errorComponent`, or `successComponent` attributes. See example above.
 

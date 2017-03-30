@@ -5,7 +5,6 @@ const {
   Component,
   computed,
   isPresent,
-  K: noop,
   Object: EmberObject,
   PromiseProxyMixin,
   RSVP,
@@ -36,6 +35,7 @@ const PromiseObject = EmberObject.extend(PromiseProxyMixin);
  */
 export default Component.extend({
   layout,
+  tagName: '',
 
   /**
    * Computes component state based on the promise state and associated data
@@ -172,7 +172,7 @@ export default Component.extend({
      * @type {Function}
      * @default noop
      */
-    this.onFulfilledData = this.getWithDefault('onFulfilledData', noop);
+    this.onFulfilledData = this.getWithDefault('onFulfilledData', function () {});
 
     /**
      * If one or more promises are provided, batch into a single PromiseProxy `promise` object
