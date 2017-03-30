@@ -95,7 +95,7 @@ export default Component.extend({
       return RSVP.hash(promises);
     }
 
-    return promises;
+    return Promise.resolve(promises);
   },
 
   /**
@@ -175,7 +175,7 @@ export default Component.extend({
     this.onFulfilledData = this.getWithDefault('onFulfilledData', noop);
 
     /**
-     * If one or more promises are provided, batch into a single PromiseProxy `promise` object
+     * Resolve `promises` into a single PromiseProxy `promise` object
      */
     if (isPresent(this.promises)) {
       const promise = this._resolvePromises(this.promises);
