@@ -4,6 +4,8 @@
 
 ember-tri-state is an Ember addon that aims to make loading data into different sections of your template less of a headache. This is accomplished through a `tri-state` component, which dynamically renders 'loading', 'error', and 'success' components depending on the state of a provided promise (or collection of promises).
 
+Check out the [demo](https://ember-twiddle.com/0334972688d8ccf699b820d783f1b624?openFiles=routes.application.js%2Ctemplates.components.x-error.hbs)
+
 #### *Warning: This is work in progress and currently only works on Ember 2.10 or higher.*
 
 *Caveat: Since we bypass the `model` hook in the route fastboot will render the page immediately without any data. If you are relying on fastboot for SEO, you will probably want to continue returning critical data in your model hook and using `tri-state` only for non-SEO imperative content (like loading tweets or comments for example)*
