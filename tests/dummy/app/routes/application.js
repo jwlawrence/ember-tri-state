@@ -31,7 +31,7 @@ export default Ember.Route.extend({
   getEvents() {
     return new Promise((resolve, reject) => {
       setTimeout(() => {
-        resolve([
+        reject([
           {
             name: 'foo',
             location: 'SF',
