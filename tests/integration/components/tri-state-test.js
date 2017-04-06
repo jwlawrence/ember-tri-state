@@ -3,7 +3,7 @@ import { moduleForComponent, test } from 'ember-qunit';
 import hbs from 'htmlbars-inline-precompile';
 import wait from 'ember-test-helpers/wait';
 
-const { Logger, RSVP, run, Test } = Ember;
+const { Logger, RSVP, run, Test, typeOf } = Ember;
 
 let originalLoggerError;
 let originalTestAdapterException;
@@ -130,28 +130,6 @@ test('the yield and noop components can be overridden', function (assert) {
   this.render(template);
 
   assert.equal(this.$().text().trim(), 'Component Override\nComponent Override', 'noop component overridden');
-});
-
-test('it accepts objects and arrays of thenables', function (assert) {
-  this.set('promises', {
-    name: RSVP.Promise.resolve('Test McTesterson'),
-    title: RSVP.Promise.resolve('Tester'),
-  });
-  this.render(template);
-
-  return wait().then(() => {
-    assert.equal(this.$('.title-success').text().trim(), 'Success', 'Object successfully handled');
-  });
-
-  this.set('promises', [
-    RSVP.Promise.resolve('Test McTesterson'),
-    RSVP.Promise.resolve('Tester'),
-  ]);
-  this.render(template);
-
-  return wait().then(() => {
-    assert.equal(this.$('.title-success').text().trim(), 'Success', 'Array successfully handled');
-  });
 });
 
 test('it resolves despite containing rejected promises when forceResolveAll is true', function (assert) {

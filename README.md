@@ -2,7 +2,9 @@
 
 ## What is this?
 
-[![Build Status](https://travis-ci.org/jwlawrence/ember-tri-state.svg?branch=master)](https://travis-ci.org/jwlawrence/ember-tri-state) [![Ember Observer Score](https://emberobserver.com/badges/ember-tri-state.svg)](https://emberobserver.com/addons/ember-tri-state)
+[![NPM version](https://img.shields.io/npm/v/ember-tri-state.svg?style=flat-square)](https://www.npmjs.com/package/ember-tri-state)
+[![Build Status](https://travis-ci.org/jwlawrence/ember-tri-state.svg?branch=master)](https://travis-ci.org/jwlawrence/ember-tri-state)
+[![Ember Observer Score](https://emberobserver.com/badges/ember-tri-state.svg)](https://emberobserver.com/addons/ember-tri-state)
 
 ember-tri-state is an Ember addon that aims to make loading data into different sections of your template less of a headache. This is accomplished through a `tri-state` component, which dynamically renders 'loading', 'error', and 'success' components depending on the state of a provided promise (or collection of promises).
 

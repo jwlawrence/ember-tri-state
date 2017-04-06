@@ -4,9 +4,9 @@ import layout from 'ember-tri-state/templates/components/tri-state';
 const {
   Component,
   computed,
-  isPresent,
   Object: EmberObject,
   PromiseProxyMixin,
+  typeOf,
   RSVP,
 } = Ember;
 
@@ -88,7 +88,7 @@ export default Component.extend({
       return RSVP.all(promises);
     }
 
-    if (typeof promises === 'object') {
+    if (typeOf(promises) === 'object') {
       if (this.get('forceResolveAll')) {
         return RSVP.hashSettled(promises);
       }
@@ -174,20 +174,16 @@ export default Component.extend({
      */
     this.onFulfilledData = this.getWithDefault('onFulfilledData', function () {});
 
-    /**
-     * Resolve `promises` into a single PromiseProxy `promise` object
-     */
-    if (isPresent(this.promises)) {
-      const promise = this._resolvePromises(this.promises);
+    // Resolve `promises` into a single `promise`
+    const promise = this._resolvePromises(this.promises);
 
-      // Create a promise proxy object that is state aware
-      this.set('promise', PromiseObject.create({ promise }));
+    // Create a promise proxy object that is state aware
+    this.set('promise', PromiseObject.create({ promise }));
 
-      // If promise is fulfilled, cache data and trigger callback
-      promise.then((data) => {
-        this._lastResolvedData = data;
-        this.onFulfilledData(data);
-      });
-    }
+    // If promise is fulfilled, cache data and trigger callback
+    promise.then((data) => {
+      this._lastResolvedData = data;
+      this.onFulfilledData(data);
+    });
   },
 });
