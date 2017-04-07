@@ -2,7 +2,7 @@
 
 ## What is this?
 
-[![NPM version](https://img.shields.io/npm/v/ember-tri-state.svg?style=flat-square)](https://www.npmjs.com/package/ember-tri-state)
+[![NPM version](https://img.shields.io/npm/v/ember-tri-state.svg)](https://www.npmjs.com/package/ember-tri-state)
 [![Build Status](https://travis-ci.org/jwlawrence/ember-tri-state.svg?branch=master)](https://travis-ci.org/jwlawrence/ember-tri-state)
 [![Ember Observer Score](https://emberobserver.com/badges/ember-tri-state.svg)](https://emberobserver.com/addons/ember-tri-state)
 
