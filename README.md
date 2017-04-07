@@ -10,15 +10,15 @@ ember-tri-state is an Ember addon that aims to make loading data into different 
 
 Check out the [demo](https://ember-twiddle.com/0334972688d8ccf699b820d783f1b624?openFiles=routes.application.js%2Ctemplates.components.x-error.hbs)
 
-#### *Warning: This is work in progress and currently only works on Ember 2.10 or higher. Until this is >= v1.0.0 you should assume minor version bumps contain breaking changes.*
+#### *Warning: This addon only works on Ember 2.10 or higher.*
 
-*Caveat: Since we bypass the `model` hook in the route fastboot will render the page immediately without any data. If you are relying on fastboot for SEO, you will probably want to continue returning critical data in your model hook and using `tri-state` only for non-SEO imperative content (like loading tweets or comments for example)*
+*A note on SEO*: Since we bypass the `model` hook in the route, fastboot will render the page immediately without any data. If you are relying on fastboot for SEO you will probably want to continue resolving data in your model hook and using `tri-state` only for non-SEO imperative content (like loading tweets or comments for example)
 
 ## Why would I use it?
 
 Basically, perceived performance gains and improved feedback for your users.
 
-By default, if you return a promise as part of a route's `model` hook Ember blocks rendering until that promise resolves. Of course you can leverage loading substates, but they don't offer much flexibility and are tied to routes. This is fine for basic use cases, but becomes cumbersome when you have multiple requests being made on a route and you want to render them independently.
+By default, if you return a promise as part of a route's `model` hook Ember blocks rendering until that promise resolves. Of course you can leverage loading substates, but they don't offer much flexibility and are scoped to routes, so you don't have granular control of the page. This is fine for basic use cases, but becomes cumbersome when you have multiple requests being made on a route and you want to render them independently.
 
 If you return an `RSVP.hash` in your model hook, your users will be stuck waiting until all of the promises resolve (or one is rejected) rather than having them resolve individually.
 
@@ -32,7 +32,7 @@ Most likely, you want to show the user a page scaffolding that is initially abse
 
 ### Create your fetch action(s)
 
-Rather than returning promises or a `RSVP.hash` directly from your model hook, you need to return promises (or thenables such as an ember-concurrency task) in an object. This will allow Ember to render the template immediately since it only sees an object being returned. Pass these promises into `tri-state`'s `promises` attribute and the state will be derived for you.
+Rather than returning promises or a `RSVP.hash` directly from your model hook, you need to return an object containing promises (or thenables such as an ember-concurrency task). This will allow Ember to render the template immediately since it only sees an object being returned, not a blocking promise. Pass the promise(s) in the model object into `tri-state`'s `promises` attribute and the state will be derived for you.
 
 ```
 // route - index.js
@@ -47,9 +47,15 @@ export default Ember.Route.extend({
 });
 ```
 
-### Include the `tri-state` component in your templates
+```
+{{#tri-state promises=model.postsRequest as |tri|}}
+  // your content here
+{{/tri-state}}
+```
 
-The `tri-state` component accepts promise(s) and figures out what to render based on of the state of the promise and what you have defined inside the tri-state component blocks. The component must be used in block form. Here's a simple example:
+### Using the `tri-state` component in your templates
+
+The `tri-state` component accepts a promise or multiple promises and yields pre-defined components back via a yielded `tri` object. The `tri` object contains components for 'loading', 'error', and 'success' states that dynamically render (or not render) based on the provided promise state. Success and error components will automatically yield the resulting data from the settled request. The `tri-state` component must be used in block form. Here's a simple example:
 
 ```
 {{#tri-state promises=model.postsRequest as |tri| }}
@@ -63,7 +69,7 @@ The `tri-state` component accepts promise(s) and figures out what to render base
     <p>An error occurred: {{error.message}}</p>
   {{/tri.error}}
 
-  // Rendered if the request resolves successfully
+  // Rendered if the request is successfully fulfilled
   {{#tri.success as |posts|}}
     {{#each posts as |post|}}
       {{post.title}}
@@ -82,14 +88,18 @@ By default the "loading", "error", and "success" components will either yield wh
   errorComponent="my-error-component"
   as |tri|
 }}
+  <h1>This will render regardless of promise state</h1>
+
   // Renders "my-loading-component" while the request is in progress
   {{tri.loading}}
 
   // Renders "my-error-component" if the request is rejected
-  // The component has access to the response via the "data" attr
   {{tri.error}}
 
-  ...
+  // Renders whatever is in the block if the request is successfully fulfilled
+  {{#tri.success}}
+    <p>Success!</p>
+  {{/tri.success}}
 {{/tri-state}}
 ```
 
@@ -125,13 +135,13 @@ A word on component rendering. You can explicitly set the component that is rend
 
 ## How do I contribute to this addon?
 
-Have an idea on how to make this better? Please submit and issue, or even better, a PR.
+Have an idea on how to make this better? Please open an issue or even better, submit a PR.
 
 ### Installation
 
 * `git clone https://github.com/jwlawrence/ember-tri-state` this repository
 * `cd ember-tri-state`
-* `npm install`
+* `yarn install`
 * `bower install`
 
 ### Running
