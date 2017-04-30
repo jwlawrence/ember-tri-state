@@ -1,37 +1,16 @@
 module.exports = {
   root: true,
-  parser: 'babel-eslint',
   parserOptions: {
     ecmaVersion: 6,
-    sourceType: 'module',
+    sourceType: 'module'
   },
-  extends: 'airbnb-base',
+  extends: 'eslint:recommended',
   env: {
-    browser: true,
-    node: false,
-  },
-  ecmaFeatures: {
-    arrowFunctions: true,
-    blockBindings: true,
-    classes: true,
-    defaultParams: true,
-    destructuring: true,
-    forOf: false,
-    generators: false,
-    modules: true,
-    objectLiteralComputedProperties: true,
-    objectLiteralDuplicateProperties: false,
-    objectLiteralShorthandMethods: true,
-    objectLiteralShorthandProperties: true,
-    restParams: true,
-    spread: true,
-    superInFunctions: false,
-    templateStrings: true,
-    jsx: false,
+    browser: true
   },
   rules: {
     'arrow-body-style': 'off',
-    'comma-dangle': 'warn',
+    'comma-dangle': ['warn', 'always-multiline'],
     'consistent-return': 'off',
     'curly': 'error',
     'func-names': 'off',
@@ -52,5 +31,5 @@ module.exports = {
     'prefer-arrow-callback': 'off',
     'prefer-const': 'warn',
     'prefer-rest-params': 'off',
-  }
+  },
 };

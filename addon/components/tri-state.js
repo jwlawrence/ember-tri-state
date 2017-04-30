@@ -95,7 +95,7 @@ export default Component.extend({
       return RSVP.hash(promises);
     }
 
-    return Promise.resolve(promises);
+    return RSVP.Promise.resolve(promises);
   },
 
   /**
