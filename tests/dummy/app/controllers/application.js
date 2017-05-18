@@ -5,14 +5,22 @@ const { Controller } = Ember;
 export default Controller.extend({
   showLastSuccessful: true,
 
-  actions: {
-    resetShowLastSuccessful() {
-      this.set('showLastSuccessful', true);
-    },
+  onFulfilled(data) {
+    console.log('fulfilled: ', data);
+  },
 
-    flushAndRefreshModel() {
-      this.set('showLastSuccessful', false);
+  onRejected(reason) {
+    console.log('rejected: ', reason);
+  },
+  
+  onSettled() {
+    console.log('settled');
+  },
+  
+  actions: {
+    refreshModel(flush = false) {
+      this.set('showLastSuccessful', flush);
       return true;
     },
-  },
+  }
 });

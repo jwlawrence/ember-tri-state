@@ -1,12 +1,15 @@
 import Ember from 'ember';
 import { task, timeout } from 'ember-concurrency';
 
+const { RSVP, run } = Ember;
+
 export default Ember.Route.extend({
   model() {
     return {
-      userRequest: this.getUser(),
+      errorRequest: this.getError(),
       eventsRequest: this.getEvents(),
       postRequest: this.get('getPost').perform(),
+      userRequest: this.getUser()
     }
   },
 
@@ -18,38 +21,33 @@ export default Ember.Route.extend({
   }).cancelOn('deactivate').restartable(),
 
   getUser(name = 'Bernard') {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        resolve({
+    return new RSVP.Promise((resolve, reject) => {
+      run.later(this, () => {
+      	resolve({
           name,
           time: Date.now(),
-        })
-      }, 1000)
+        });
+    	}, 1000);
     });
   },
 
   getEvents() {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        reject([
-          {
-            name: 'foo',
-            location: 'SF',
-          },
-          {
-            name: 'bar',
-            location: 'SV',
-          }
-        ]);
-      }, 2000)
+    return new RSVP.Promise((resolve, reject) => {
+      run.later(this, () => {
+      	reject('Events not found');
+    	}, 2000);
+    });
+  },
+
+  getError() {
+    return new RSVP.Promise((resolve, reject) => {
+      run.later(this, () => {
+      	reject('Uh oh, this promise was rejected');
+    	}, 2500);
     });
   },
 
   actions: {
-    flushAndRefreshModel() {
-      this.refresh();
-    },
-
     refreshModel() {
       this.refresh();
     }

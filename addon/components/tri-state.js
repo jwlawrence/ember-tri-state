@@ -19,12 +19,14 @@ const PromiseObject = EmberObject.extend(PromiseProxyMixin);
  *
  * Attributes accepted by this component:
  * --------------------------------------
- * promises           {Promise|Array|Object}- One or more promises to compute component state from
+ * promises           {Promise|Array|Object}- One or more promises
  * showLastSuccessful {Boolean}             - If true, display the last successful data instead of
  *                                            the loading or error component when fetching new data
  * forceResolveAll    {Boolean}             - Fulfill `promise` regardless of whether any of the
  *                                            batched `promises` reject.
- * onFulfilledData    {Function}            - Callback called when promise is successfully fulfilled
+ * onFulfilledData    {Function}            - Callback called when promise is fulfilled
+ * onRejected         {Function}            - Callback called when promise is rejected
+ * onSettled          {Function}            - Callback called when promise is settled
  * noopComponent      {String}              - Component used when not rendering a state
  * yieldComponent     {String}              - Component used when rendering any state by default
  * loadingComponent   {String}              - Override `yieldComponent` when rendering loading state
@@ -168,22 +170,44 @@ export default Component.extend({
     this.loadingComponent = this.getWithDefault('loadingComponent', this.yieldComponent);
 
     /**
-     * Callback called when the promise has successfully resolved
+     * Callback called when the promise has been fulfilled
      * @type {Function}
      * @default noop
      */
-    this.onFulfilledData = this.getWithDefault('onFulfilledData', function () {});
+    this.onFulfilledData = this.getWithDefault('onFulfilledData', () => {});
 
-    // Resolve `promises` into a single `promise`
-    const promise = this._resolvePromises(this.promises);
+    /**
+     * Callback called when the promise has been rejected
+     * @type {Function}
+     * @default noop
+     */
+    this.onRejected = this.getWithDefault('onRejected', () => {});
+
+    /**
+     * Callback called when the promise has been settled
+     * @type {Function}
+     * @default noop
+     */
+    this.onSettled = this.getWithDefault('onSettled', () => {});
+
+    // Wrap `promises` into a single promise
+    const promise = this._resolvePromises(this.get('promises'));
 
     // Create a promise proxy object that is state aware
     this.set('promise', PromiseObject.create({ promise }));
 
-    // If promise is fulfilled, cache data and trigger callback
-    promise.then((data) => {
-      this._lastResolvedData = data;
-      this.onFulfilledData(data);
-    });
+    // Resolve promise
+    this.get('promise')
+      .then((data) => {
+        // cache successful data
+        this._lastResolvedData = data;
+        this.onFulfilledData(data);
+      })
+      .catch((reason) => {
+        this.onRejected(reason);
+      })
+      .finally(() => {
+        this.onSettled();
+      });
   },
 });

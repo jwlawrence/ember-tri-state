@@ -1,55 +1,120 @@
-<h1>Tri-State</h1>
-
-<button {{action 'flushAndRefreshModel'}}>Flush and Reload Data</button>
+<button {{action 'refreshModel' true}}>Flush and Reload Data</button>
 <button {{action 'refreshModel'}}>Reload Data</button>
 
-{{#tri-state
-  promises=(hash
-    user=model.userRequest
-    events=model.eventsRequest
-  )
-  showLastSuccessful=showLastSuccessful
-  forceResolveAll=true
-  onFulfilledData=(action 'resetShowLastSuccessful')
-  as |tri|
-}}
-  {{#tri.loading}}
-    <h1>Loading Component</h1>
-    <p>Please wait...</p>
-  {{/tri.loading}}
-
-  {{#tri.error as |error|}}
-    <h1>Error Component</h1>
-    <p>{{error.name}}</p>
-  {{/tri.error}}
-
-  {{#tri.success as |data|}}
-    {{#tri-success user=data.user events=data.events as |user events|}}
-      {{if tri.isLoading 'Updating...'}}
-      <p>User: {{user.name}} | Last updated: {{user.time}}</p>
-      <p>Events</p>
-      <ul>
-        {{#each events as |event|}}
-          <li>Name: {{event.name}} | Location: {{event.location}}</li>
-        {{/each}}
-      </ul>
-    {{/tri-success}}
-  {{/tri.success}}
-{{/tri-state}}
-
-
+<h1>Single Fulfilled</h1>
 {{#tri-state
   promises=model.postRequest
   showLastSuccessful=showLastSuccessful
-  onFulfilledData=(action 'resetShowLastSuccessful')
-  loadingComponent='tri-loading'
-  errorComponent='tri-error'
+  loadingComponent='x-loading'
+  errorComponent='x-error'
+  successComponent='x-success'
+  onFulfilledData=onFulfilled
+  onSettled=onSettled
   as |tri|
 }}
   {{tri.loading}}
   {{tri.error}}
   {{#tri.success as |data|}}
-    <h1>Success Component</h1>
-    <p>Post: {{data.title}}</p>
+    <p>{{data.title}}</p>
+  {{/tri.success}}
+{{/tri-state}}
+
+<hr/>
+
+<h1>Single Rejected</h1>
+{{#tri-state
+  promises=model.errorRequest
+  loadingComponent='x-loading'
+  errorComponent='x-error'
+  successComponent='x-success'
+  onRejected=onRejected
+  onSettled=onSettled
+  as |tri|
+}}
+  {{tri.loading}}
+  {{tri.error}}
+  {{tri.success}}
+{{/tri-state}}
+
+<hr/>
+
+<h1>Multiple Fulfilled</h1>
+{{#tri-state
+  promises=(hash
+    post=model.postRequest
+    user=model.userRequest
+  )
+  loadingComponent='x-loading'
+  errorComponent='x-error'
+  successComponent='x-success'
+  as |tri|
+}}
+  {{tri.loading}}
+  {{tri.error}}
+  {{#tri.success as |data|}}
+    <p>Post: {{data.post.title}}</p>
+    <p>User: {{data.user.name}} | Last updated: {{data.user.time}}</p>
+  {{/tri.success}}
+{{/tri-state}}
+
+<hr/>
+
+<h1>Multiple Rejected</h1>
+{{#tri-state
+  promises=(hash
+    error=model.errorRequest
+    events=model.eventsRequest
+  )
+  loadingComponent='x-loading'
+  errorComponent='x-error'
+  successComponent='x-success'
+  as |tri|
+}}
+  {{tri.loading}}
+  {{tri.error}}
+  {{tri.success}}
+{{/tri-state}}
+
+<hr/>
+
+<h1>Multiple Rejected (with forceResolveAll)</h1>
+{{#tri-state
+  promises=(hash
+    events=model.eventsRequest
+    error=model.errorRequest
+  )
+  forceResolveAll=true
+  loadingComponent='x-loading'
+  errorComponent='x-error'
+  successComponent='x-success'
+  as |tri|
+}}
+  {{tri.loading}}
+  {{tri.error}}
+  {{#tri.success as |data|}}
+    <p>Rejected: {{data.error.reason}}</p>
+    <p>Rejected: {{data.events.reason}}</p>
+  {{/tri.success}}
+{{/tri-state}}
+
+<hr/>
+
+<h1>Multiple Mixed Results (with forceResolveAll)</h1>
+{{#tri-state
+  promises=(hash
+    post=model.postRequest
+    fail=model.errorRequest
+  )
+  forceResolveAll=true
+  loadingComponent='x-loading'
+  errorComponent='x-error'
+  successComponent='x-success'
+  as |tri|
+}}
+  {{tri.loading}}
+  {{tri.error}}
+  {{#tri.success as |data|}}
+    <p>Fulfilled: {{data.post.value.title}}</p>
+    <p>Rejected: {{data.fail.reason}}</p>
   {{/tri.success}}
 {{/tri-state}}
