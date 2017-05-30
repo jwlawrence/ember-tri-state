@@ -1,6 +1,6 @@
 {
   "name": "ember-tri-state",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "An Ember addon that renders components based on the state of data requests",
   "keywords": [
     "ember-addon"
