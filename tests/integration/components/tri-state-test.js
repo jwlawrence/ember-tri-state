@@ -1,9 +1,15 @@
+import RSVP from 'rsvp';
+import { run } from '@ember/runloop';
+import { typeOf } from '@ember/utils';
 import Ember from 'ember';
 import { moduleForComponent, test } from 'ember-qunit';
 import hbs from 'htmlbars-inline-precompile';
 import wait from 'ember-test-helpers/wait';
 
-const { Logger, RSVP, run, Test, typeOf } = Ember;
+const {
+  Logger,
+  Test
+} = Ember;
 
 let originalLoggerError;
 let originalTestAdapterException;

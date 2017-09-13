@@ -1,9 +1,9 @@
-import Ember from 'ember';
+import Route from '@ember/routing/route';
+import RSVP from 'rsvp';
+import { run } from '@ember/runloop';
 import { task, timeout } from 'ember-concurrency';
 
-const { RSVP, run } = Ember;
-
-export default Ember.Route.extend({
+export default Route.extend({
   model() {
     return {
       errorRequest: this.getError(),

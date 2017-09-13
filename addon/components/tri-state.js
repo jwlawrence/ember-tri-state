@@ -1,14 +1,9 @@
-import Ember from 'ember';
+import Component from '@ember/component';
+import EmberObject, { computed } from '@ember/object';
+import PromiseProxyMixin from '@ember/object/promise-proxy-mixin';
+import { typeOf } from '@ember/utils';
+import RSVP from 'rsvp';
 import layout from 'ember-tri-state/templates/components/tri-state';
-
-const {
-  Component,
-  computed,
-  Object: EmberObject,
-  PromiseProxyMixin,
-  typeOf,
-  RSVP,
-} = Ember;
 
 const PromiseObject = EmberObject.extend(PromiseProxyMixin);
 

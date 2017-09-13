@@ -1,7 +1,7 @@
-import Ember from 'ember';
+import Component from '@ember/component';
 import layout from 'ember-tri-state/templates/components/tri-yield';
 
-export default Ember.Component.extend({
+export default Component.extend({
   layout,
   tagName: '',
 });
