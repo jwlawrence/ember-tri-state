@@ -1,20 +1,22 @@
-import { moduleForComponent, test } from 'ember-qunit';
+import { module, test } from 'qunit';
+import { setupRenderingTest } from 'ember-qunit';
+import { render, find } from '@ember/test-helpers';
 import hbs from 'htmlbars-inline-precompile';
 
-moduleForComponent('tri-yield', 'Integration | Component | tri yield', {
-  integration: true,
-});
+module('Integration | Component | tri yield', function(hooks) {
+  setupRenderingTest(hooks);
 
-test('it yields its data attribute', function(assert) {
-  this.render(hbs`{{tri-yield data="foo"}}`);
+  test('it yields its data attribute', async function(assert) {
+    await render(hbs`{{tri-yield data="foo"}}`);
 
-  assert.equal(this.$().text().trim(), '', 'it does not output anything');
+    assert.equal(find('*').textContent.trim(), '', 'it does not output anything');
 
-  this.render(hbs`
-    {{#tri-yield data="foo" as |data|}}
-      {{data}}
-    {{/tri-yield}}
-  `);
+    await render(hbs`
+      {{#tri-yield data="foo" as |data|}}
+        {{data}}
+      {{/tri-yield}}
+    `);
 
-  assert.equal(this.$().text().trim(), 'foo', 'it yields `foo`');
+    assert.equal(find('*').textContent.trim(), 'foo', 'it yields `foo`');
+  });
 });
