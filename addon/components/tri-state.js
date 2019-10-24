@@ -75,7 +75,7 @@ export default Component.extend({
    */
   _resolvePromises(promises) {
     if (promises && typeof promises.then === 'function') {
-      return promises;
+      return RSVP.Promise.resolve(promises);
     }
 
     if (Array.isArray(promises)) {
