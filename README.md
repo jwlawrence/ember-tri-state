@@ -10,7 +10,7 @@ ember-tri-state is an Ember addon that aims to make loading data into different 
 
 Check out the [demo](https://ember-twiddle.com/0334972688d8ccf699b820d783f1b624?openFiles=routes.application.js%2Ctemplates.components.x-error.hbs)
 
-#### *Warning: This addon only works on Ember 2.10 or higher.*
+#### *Warning: This addon only works on Ember 2.18 or higher.*
 
 *A note on SEO*: Since we bypass the `model` hook in the route, fastboot will render the page immediately without any data. If you are relying on fastboot for SEO you will probably want to continue resolving data in your model hook and using `tri-state` only for non-SEO imperative content (like loading tweets or comments for example)
 
