@@ -26,6 +26,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - run: npm install -g yarn
+    - run: yarn global add ember-cli
     - run: yarn install --frozen-lockfile
     - run: yarn build --if-present
-    - run: yarn test
+    - run: ember test
